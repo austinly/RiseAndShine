@@ -15,10 +15,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <Button
-        android:id="@+id/toggle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="#ffffffff"
-        android:text="Tap to begin."/>
+
 </RelativeLayout>

@@ -7,13 +7,12 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -23,7 +22,6 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static final String TAG = "bluetooth1";
     private static String address = "98:D3:31:90:4D:97";
 
     private BluetoothAdapter btAdapter = null;
@@ -38,12 +36,19 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        Button startButton = (Button)findViewById(R.id.start);
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendData("0");
+            }
+        });
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                sendData("1");
             }
         });
 
@@ -58,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
                 final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
                 return (BluetoothSocket) m.invoke(device, MY_UUID);
             } catch (Exception e) {
-                Log.e(TAG, "Could not create Insecure RFComm Connection", e);
             }
         }
         return device.createRfcommSocketToServiceRecord(MY_UUID);
@@ -68,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
 
-        Log.d(TAG, "...onResume - try connect...");
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
         try {
             btSocket = createBluetoothSocket(device);
@@ -78,19 +81,15 @@ public class MainActivity extends AppCompatActivity {
 
         btAdapter.cancelDiscovery();
 
-        Log.d(TAG, "...Connecting...");
         try {
             btSocket.connect();
-            Log.d(TAG, "...Connection ok...");
         } catch (IOException e) {
             try {
                 btSocket.close();
-            } catch (IOException e2) {
-                errorExit("Fatal Error", "In onResume() and unable to close socket during connection failure" + e2.getMessage() + ".");
+            } catch (IOException e1) {
+                errorExit("Fatal Error", "In onResume() and unable to close socket during connection failure" + e1.getMessage() + ".");
             }
         }
-
-        Log.d(TAG, "...Create Socket...");
 
         try {
             outStream = btSocket.getOutputStream();
@@ -103,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
     public void onPause() {
         super.onPause();
 
-        Log.d(TAG, "...In onPause()...");
         if (outStream != null) {
             try {
                 outStream.flush();
@@ -120,11 +118,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkBTState() {
-        if(btAdapter==null) {
+        if(btAdapter == null) {
             errorExit("Fatal Error", "Bluetooth not support");
         } else {
             if (btAdapter.isEnabled()) {
-                Log.d(TAG, "...Bluetooth ON...");
             } else {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, 1);
@@ -140,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendData(String message) {
         byte[] msgBuffer = message.getBytes();
-        Log.d(TAG, "...Send data:" + message + "...");
 
         try {
             outStream.write(msgBuffer);

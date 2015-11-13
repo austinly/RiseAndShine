@@ -1,5 +1,6 @@
 package com.hieu.riseandshine;
 
+import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -9,15 +10,19 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -28,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothSocket btSocket = null;
     private OutputStream outStream = null;
 
+    Calendar dateTime = Calendar.getInstance();
+    SimpleDateFormat dateFormat;
+    TextView alarm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,26 +44,34 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Button startButton = (Button)findViewById(R.id.start);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sendData("0");
-            }
-        });
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                sendData("1");
+                new TimePickerDialog(view.getContext(), t, dateTime.get(Calendar.HOUR_OF_DAY),
+                        dateTime.get(Calendar.MINUTE), DateFormat.is24HourFormat(view.getContext())).show();
             }
         });
+
+        dateFormat = new SimpleDateFormat("h:mma");
+        alarm = (TextView)findViewById(R.id.info_text);
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         checkBTState();
 
     }
+
+    TimePickerDialog.OnTimeSetListener t = new TimePickerDialog.OnTimeSetListener() {
+        @Override
+        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+            dateTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            dateTime.set(Calendar.MINUTE, minute);
+
+            findViewById(R.id.card_view).setVisibility(View.VISIBLE);
+            alarm.setText(dateFormat.format(dateTime.getTime()));
+            Toast.makeText(getBaseContext(), hourOfDay + ":" + minute, Toast.LENGTH_LONG).show();
+        }
+    };
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         if(Build.VERSION.SDK_INT >= 10){
@@ -68,10 +84,7 @@ public class MainActivity extends AppCompatActivity {
         return device.createRfcommSocketToServiceRecord(MY_UUID);
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
+    public void sync() {
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
         try {
             btSocket = createBluetoothSocket(device);
@@ -98,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /*
     @Override
     public void onPause() {
         super.onPause();
@@ -116,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
             errorExit("Fatal Error", "In onPause() and failed to close socket." + e2.getMessage() + ".");
         }
     }
-
+    */
     private void checkBTState() {
         if(btAdapter == null) {
             errorExit("Fatal Error", "Bluetooth not support");

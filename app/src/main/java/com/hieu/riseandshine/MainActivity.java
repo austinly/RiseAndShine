@@ -34,8 +34,9 @@ public class MainActivity extends AppCompatActivity {
     private OutputStream outStream = null;
 
     Calendar dateTime = Calendar.getInstance();
-    SimpleDateFormat dateFormat;
-    TextView alarm;
+    SimpleDateFormat dateFormat12, dateFormat24;
+    TextView alarmText;
+    String alarm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +54,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        dateFormat = new SimpleDateFormat("h:mma");
-        alarm = (TextView)findViewById(R.id.info_text);
+        dateFormat12 = new SimpleDateFormat("h:mma");
+        dateFormat24 = new SimpleDateFormat("kkmm");
+        alarmText = (TextView)findViewById(R.id.info_text);
+        alarm = "";
 
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         checkBTState();
@@ -67,11 +70,46 @@ public class MainActivity extends AppCompatActivity {
             dateTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
             dateTime.set(Calendar.MINUTE, minute);
 
+            findViewById(R.id.no_alarm_text).setVisibility(View.GONE);
             findViewById(R.id.card_view).setVisibility(View.VISIBLE);
-            alarm.setText(dateFormat.format(dateTime.getTime()));
-            Toast.makeText(getBaseContext(), hourOfDay + ":" + minute, Toast.LENGTH_LONG).show();
+
+            alarmText.setText(dateFormat12.format(dateTime.getTime()));
+            alarm = dateFormat24.format(dateTime.getTime());
+            Toast.makeText(getBaseContext(), "Alarm set!", Toast.LENGTH_SHORT).show();
         }
     };
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        if(id == R.id.action_sync) {
+            checkBTState();
+
+            Calendar current = Calendar.getInstance();
+            String time = dateFormat24.format(current.getTime());
+            String syncData =  time + alarm + "a";
+
+            Toast.makeText(getApplicationContext(), syncData, Toast.LENGTH_LONG).show();
+            sendData(syncData);
+            return true;
+        }
+        else if(id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         if(Build.VERSION.SDK_INT >= 10){
@@ -84,7 +122,10 @@ public class MainActivity extends AppCompatActivity {
         return device.createRfcommSocketToServiceRecord(MY_UUID);
     }
 
-    public void sync() {
+    @Override
+    public void onResume() {
+        super.onResume();
+
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
         try {
             btSocket = createBluetoothSocket(device);
@@ -92,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
             errorExit("Fatal Error", "In onResume() and socket create failed: " + e.getMessage() + ".");
         }
 
-        btAdapter.cancelDiscovery();
+       // btAdapter.cancelDiscovery();
 
         try {
             btSocket.connect();
@@ -110,8 +151,6 @@ public class MainActivity extends AppCompatActivity {
             errorExit("Fatal Error", "In onResume() and output stream creation failed:" + e.getMessage() + ".");
         }
     }
-
-    /*
     @Override
     public void onPause() {
         super.onPause();
@@ -130,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
             errorExit("Fatal Error", "In onPause() and failed to close socket." + e2.getMessage() + ".");
         }
     }
-    */
+
     private void checkBTState() {
         if(btAdapter == null) {
             errorExit("Fatal Error", "Bluetooth not support");
@@ -154,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             outStream.write(msgBuffer);
-        } catch (IOException e) {
+        } catch (Exception e) {
             String msg = "In onResume() and an exception occurred during write: " + e.getMessage();
             if (address.equals("00:00:00:00:00:00"))
                 msg = msg + ".\n\nUpdate your server address from 00:00:00:00:00:00 to the correct address on line 35 in the java code";
@@ -164,25 +203,5 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 }

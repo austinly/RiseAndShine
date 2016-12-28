@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
             alarmText.setText(dateFormat12.format(dateTime.getTime()));
             alarm = dateFormat24.format(dateTime.getTime());
-            Toast.makeText(getBaseContext(), "Alarm set!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), "Alarm set.", Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
             String time = dateFormat24.format(current.getTime());
             String syncData =  time + alarm + "a";
 
-            Toast.makeText(getApplicationContext(), syncData, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Alarm synced.", Toast.LENGTH_SHORT).show();
             sendData(syncData);
             return true;
         }
